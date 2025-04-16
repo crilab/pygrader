@@ -1,0 +1,18 @@
+{
+    "name": "Web Template",
+    "postAttachCommand": "./start-dev.bash",
+    "customizations": {
+        "codespaces": {
+            "openFiles": [
+                "./src/index.html"
+            ]
+        }
+    },
+    "portsAttributes": {
+        "8080": {
+            "label": "Application",
+            "onAutoForward": "openPreview"
+        }
+    },
+    "forwardPorts": [8080]
+}
