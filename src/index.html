@@ -6,6 +6,77 @@
         <title>Web Template</title>
     </head>
     <body>
-        Web Template
+        <iframe id="sandbox" sandbox="allow-scripts" style="display: none;" srcdoc="
+            <html><head><script>
+
+                window.onload = function() {
+                    const workerCode = `
+                        importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js')
+
+                        function post(type, data) {
+                            if (data === undefined)
+                                data = null
+                            self.postMessage({type, data})
+                        }
+
+                        async function initializePyodide() {
+                            self.pyodide = await loadPyodide()
+                            self.pyodide.setStdout({
+                                batched: msg => {
+                                    post('stdout', msg)
+                                }
+                            })
+                            self.pyodideReady = true
+                            post('status', 'ready')
+                        }
+
+                        self.onmessage = async function(e) {
+                            if (!self.pyodideReady)
+                                return
+                            try {
+                                post('exec_complete', self.pyodide.runPython(e.data))
+                            } catch(error) {
+                                post('exec_error', error.message)
+                            }
+                        }
+
+                        initializePyodide()
+                    `
+
+                    const blob = new Blob([workerCode], {type: 'application/javascript'})
+                    const workerUrl = URL.createObjectURL(blob)
+                    const worker = new Worker(workerUrl)
+
+                    worker.onmessage = function(e) {
+                        window.parent.postMessage(e.data, '*')
+                    }
+
+                    window.addEventListener('message', function(e) {
+                        worker.postMessage(e.data)
+                    })
+                }
+
+            </script></head></html>
+        "></iframe>
+
+        <textarea id="src"></textarea>
+        <button id="run">Run</button>
+        <pre id="output"></pre>
+
+        <script>
+            const sandbox = document.getElementById('sandbox')
+            const src = document.getElementById('src')
+            const run = document.getElementById('run')
+            const output = document.getElementById('output')
+
+            window.addEventListener('message', function(event) {
+                output.textContent += JSON.stringify(event.data)
+                output.textContent += '\n\n'
+            })
+
+            run.addEventListener('click', function() {
+                sandbox.contentWindow.postMessage(src.value, '*')
+            })
+        </script>
     </body>
 </html>
