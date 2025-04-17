@@ -196,7 +196,7 @@
                                 this.#sandboxReset('spam')
                             break
                         case 'exec_complete':
-                            this.#exec('resolve', JSON.parse(event.data))
+                            this.#exec('resolve', event.data)
                             break
                         case 'exec_error':
                             this.#exec('reject', event.data)
