@@ -311,6 +311,8 @@
                 async test(source) {
                     this.#getElement('return').innerText = ' '
                     this.#getElement('output').innerText = ''
+                    this.#getElement('gradeReturn').innerText = ''
+                    this.#getElement('gradeOutput').innerText = ''
 
                     source += '\n\n' + this.#getCall()
                     try {
