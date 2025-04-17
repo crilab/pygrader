@@ -88,10 +88,9 @@
                                 return
                             try {
                                 const globals = self.pyodide.toPy({})
-                                const locals = self.pyodide.toPy({})
                                 self.pyodide.globals.set(
                                     'result',
-                                    self.pyodide.runPython(e.data, {globals, locals})
+                                    self.pyodide.runPython(e.data, {globals})
                                 )
                                 post(
                                     'exec_complete',
@@ -243,7 +242,7 @@
                 <div id="buttons">
                     <button id="run" disabled onclick="window.assignment.runButtonClick()">Kör!</button>
                     <button id="newTest" disabled onclick="window.assignment.newTestCase()">Nytt test...</button>
-                    <button id="autoTester" disabled onclick="window.assignment.autoTester()">Auto Tester</button>
+                    <button id="autoTester" disabled onclick="window.assignment.autoTesterButtonClick()">Auto Tester</button>
                     <span id="feedback"></span>
                 </div>
                 &nbsp;Anrop:
@@ -265,6 +264,7 @@
                 #solution
                 #solutionCurrent
                 #autoTesterRunning
+                #autoTesterStopping
 
                 constructor(description, funcName, argsGenerator, solution) {
                     if (window.assignment) return window.assignment
@@ -295,7 +295,8 @@
                         else {
                             run.disabled = true
                             newTest.disabled = true
-                            autoTester.disabled = true
+                            if (!this.#autoTesterRunning)
+                                autoTester.disabled = true
                         }
                     })
 
@@ -334,11 +335,14 @@
                     return call.slice(0, -1) + '\n)'
                 }
 
-                async test(source) {
+                #disableButtons() {
                     this.#getElement('run').disabled = true
                     this.#getElement('newTest').disabled = true
-                    this.#getElement('autoTester').disabled = true
+                    //this.#getElement('autoTester').disabled = true
+                }
 
+                async test(source) {
+                    this.#disableButtons()
                     this.#clearFields()
 
                     try {
@@ -389,8 +393,41 @@
                     return grade
                 }
 
-                runButtonClick() {
-                    this.test(this.#getElement('source').value)
+                async autoTesterButtonClick() {
+                    this.#disableButtons()
+                    this.#autoTesterRunning = true
+
+                    const autoTesterButton = this.#getElement('autoTester')
+                    autoTester.onclick = () => {
+                        autoTesterButton.disabled = true
+                        this.#autoTesterStopping = true
+                    }
+
+                    let streakOfSuccess = 0
+                    const feedback = this.#getElement('feedback')
+                    while (!this.#autoTesterStopping) {
+                        await this.newTestCase()
+                        if (!await this.runButtonClick(false))
+                            break
+                        feedback.style.color = 'green'
+                        feedback.innerText = `${++streakOfSuccess} lyckade tester i rad!`
+                        await new Promise(resolve => { setTimeout(resolve, 100) })
+                    }
+
+                    this.#autoTesterRunning = false
+                    this.#autoTesterStopping = false
+                    autoTester.disabled = true
+                    try {
+                        await window.python.run('None') // This will enable buttons once Python is ready
+                    } catch (error) {}
+                    autoTester.onclick = () => {
+                        this.autoTesterButtonClick()
+                    }
+                }
+
+                async runButtonClick(disableAutoTesterButton=true) {
+                    this.#getElement('autoTester').disabled = disableAutoTesterButton
+                    return await this.test(this.#getElement('source').value)
                 }
             }
 
