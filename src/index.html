@@ -27,7 +27,7 @@
                                 }
                             })
                             self.pyodideReady = true
-                            post('status', 'ready')
+                            post('ready', '')
                         }
 
                         self.onmessage = async function(e) {
@@ -59,6 +59,81 @@
             </script></head></html>
         "></iframe>
 
+        <script>
+            class PythonRuntime {
+                #execResolve
+                #execReject
+                #exec(type, data) {
+                    switch (type) {
+                        case 'resolve':
+                            this.#execResolve(data)
+                            break
+                        case 'reject':
+                            this.#execReject(data)
+                            break
+                    }
+                    this.#execResolve = undefined
+                    this.#execReject = undefined
+                }
+
+                constructor() {
+                    if (window.python) return window.python
+
+                    this.#execResolve = 'not ready'
+
+                    window.addEventListener('message', event => {
+                        if (event.source !== this.#getElement('sandbox').contentWindow) return
+                        this.#windowMessage(event.data)
+                    })
+
+                    window.python = this
+                }
+
+                #getElement(id) {
+                    if (!['output', 'sandbox'].includes(id))
+                        throw Error('Not a valid element: ' + id)
+                    return document.getElementById(id)
+                }
+
+                #output(msg) {
+                    this.#getElement('output').textContent += msg + '\n'
+                }
+
+                #windowMessage(event) {
+                    console.log(event)
+                    switch (event.type) {
+                        case 'ready':
+                            this.#execResolve = undefined
+                            break
+                        case 'stdout':
+                            this.#output(event.data)
+                            break
+                        case 'exec_complete':
+                            this.#exec('resolve', event.data)
+                            break
+                        case 'exec_error':
+                            this.#output(event.data)
+                            this.#exec('reject', 'crash')
+                            break
+
+                    }
+                }
+
+                async run(code) {
+                    if (this.#execResolve) throw Error('Python is busy.')
+
+                    const execPromise = new Promise((resolve, reject) => {
+                        this.#execResolve = resolve
+                        this.#execReject = reject
+                    })
+
+                    this.#getElement('sandbox').contentWindow.postMessage(code, '*')
+                    return await execPromise
+                }
+            }
+            new PythonRuntime()
+        </script>
+
         <textarea id="src"></textarea>
         <button id="run">Run</button>
         <pre id="output"></pre>
@@ -69,13 +144,8 @@
             const run = document.getElementById('run')
             const output = document.getElementById('output')
 
-            window.addEventListener('message', function(event) {
-                output.textContent += JSON.stringify(event.data)
-                output.textContent += '\n\n'
-            })
-
-            run.addEventListener('click', function() {
-                sandbox.contentWindow.postMessage(src.value, '*')
+            run.addEventListener('click', async function() {
+                console.warn(await window.python.run(src.value))
             })
         </script>
     </body>
