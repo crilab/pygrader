@@ -241,8 +241,8 @@
             </div>
             <div id="rightPanel">
                 <div id="buttons">
-                    <button id="run" disabled>Run</button>
-                    <button id="newTest" disabled>New Test</button>
+                    <button id="run" disabled onclick="window.assignment.runButtonClick()">Kör!</button>
+                    <button id="newTest" disabled onclick="window.assignment.newTestCase()">Nytt test...</button>
                     <span id="feedback"></span>
                 </div>
                 &nbsp;Anrop:
@@ -277,7 +277,7 @@
 
                     window.python.addStatusEventListener(ready => {
                         if (ready && firstRun) {
-                            this.#newTestCase()
+                            this.newTestCase()
                             firstRun = false
                         }
                     })
@@ -311,7 +311,7 @@
                     this.#getElement('gradeOutput').innerText = '❓'
                 }
 
-                async #newTestCase() {
+                async newTestCase() {
                     this.#argsCurrent = this.#argsGenerator()
                     this.#solutionCurrent = await window.python.run(
                         this.#solution + '\n\n' + this.#getCall()
@@ -382,6 +382,11 @@
 
                     return grade
                 }
+
+                runButtonClick() {
+                    this.#getElement('feedback').innerText = ''
+                    this.test(this.#getElement('source').value)
+                }
             }
 
             new Assignment(
@@ -397,16 +402,6 @@
                 `def double(a, b):
                     return a + b`
             )
-
-            const sandbox = document.getElementById('sandbox')
-            const source = document.getElementById('source')
-            const run = document.getElementById('run')
-            const output = document.getElementById('output')
-
-            run.addEventListener('click', async function() {
-                document.getElementById('feedback').innerText = ''
-                window.assignment.test(source.value)
-            })
         </script>
     </body>
 </html>
