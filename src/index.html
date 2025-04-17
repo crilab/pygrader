@@ -233,9 +233,9 @@
                 <pre id="call"></pre>
                 &nbsp;Facit (JSON):
                 <pre id="solution"></pre>
-                &nbsp;Returvärde (JSON):
+                &nbsp;Returvärde (JSON): <span id="gradeReturn"></span>
                 <pre id="return"></pre>
-                &nbsp;Utskrift:
+                &nbsp;Utskrift: <span id="gradeOutput"></span>
                 <pre id="output"></pre>
             </div>
         </div>
@@ -288,11 +288,39 @@
                 }
 
                 async test(source) {
-                    this.#getElement('return').innerText = ''
+                    this.#getElement('return').innerText = ' '
                     this.#getElement('output').innerText = ''
+
                     source += '\n\n' + this.#getCall()
                     const result = await window.python.run(source)
-                    document.getElementById('return').innerText = JSON.stringify(result)
+
+                    this.#getElement('return').innerText = ''
+                    for (let i = 0; i < result.length; i++) {
+                        const span = document.createElement('span')
+                        span.innerText = result[i]
+                        span.style.color = 'green'
+                        if (result[i] !== this.#solutionCurrent[i])
+                            span.style.color = 'red'
+                        this.#getElement('return').appendChild(span)
+                    }
+
+                    let grade = true
+
+                    if (result === this.#solutionCurrent) {
+                        this.#getElement('gradeReturn').innerText = '✅'
+                    } else {
+                        this.#getElement('gradeReturn').innerText = '❌'
+                        grade = false
+                    }
+
+                    if (this.#getElement('output').innerHTML === '') {
+                        this.#getElement('gradeOutput').innerText = '✅'
+                    } else {
+                        this.#getElement('gradeOutput').innerText = '❌'
+                        grade = false
+                    }
+
+                    return grade
                 }
             }
 
