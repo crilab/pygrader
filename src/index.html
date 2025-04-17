@@ -32,7 +32,9 @@
                             if (!self.pyodideReady)
                                 return
                             try {
-                                const result = self.pyodide.runPython(e.data)
+                                const globals = self.pyodide.toPy({})
+                                const locals = self.pyodide.toPy({})
+                                const result = self.pyodide.runPython(e.data, {globals, locals})
                                 try {
                                     const result_json = result === undefined ? 'null' : JSON.stringify(result)
 
