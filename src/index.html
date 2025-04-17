@@ -70,9 +70,11 @@
 
         <script>
             class PythonRuntime {
+                #execTimeout
                 #execResolve
                 #execReject
-                #exec(type, data) {
+                #exec(type, data, newResolve = undefined) {
+                    clearTimeout(this.#execTimeout)
                     switch (type) {
                         case 'resolve':
                             this.#execResolve(data)
@@ -81,7 +83,7 @@
                             this.#execReject(data)
                             break
                     }
-                    this.#execResolve = undefined
+                    this.#execResolve = newResolve
                     this.#execReject = undefined
                 }
 
@@ -96,6 +98,14 @@
                     })
 
                     window.python = this
+                }
+
+                #sandboxReset(execRejectMsg) {
+                    const sandbox = this.#getElement('sandbox')
+                    const srcdoc = sandbox.srcdoc
+                    sandbox.srcdoc = ''
+                    sandbox.srcdoc = srcdoc
+                    this.#exec('reject', execRejectMsg, 'not ready')
                 }
 
                 #getElement(id) {
@@ -136,6 +146,7 @@
                     })
 
                     this.#getElement('sandbox').contentWindow.postMessage(code, '*')
+                    this.#execTimeout = setTimeout(() => { this.#sandboxReset('timeout') }, 1000)
                     return await execPromise
                 }
             }
