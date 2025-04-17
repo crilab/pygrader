@@ -243,6 +243,7 @@
                 <div id="buttons">
                     <button id="run" disabled onclick="window.assignment.runButtonClick()">Kör!</button>
                     <button id="newTest" disabled onclick="window.assignment.newTestCase()">Nytt test...</button>
+                    <button id="autoTester" disabled onclick="window.assignment.autoTester()">Auto Tester</button>
                     <span id="feedback"></span>
                 </div>
                 &nbsp;Anrop:
@@ -285,13 +286,16 @@
                     window.python.addStatusEventListener(ready => {
                         const run = this.#getElement('run')
                         const newTest = this.#getElement('newTest')
+                        const autoTester = this.#getElement('autoTester')
                         if (ready && !this.#autoTesterRunning) {
                             run.disabled = false
                             newTest.disabled = false
+                            autoTester.disabled = false
                         }
                         else {
                             run.disabled = true
                             newTest.disabled = true
+                            autoTester.disabled = true
                         }
                     })
 
@@ -309,6 +313,7 @@
                     this.#getElement('output').innerText = ''
                     this.#getElement('gradeReturn').innerText = '❓'
                     this.#getElement('gradeOutput').innerText = '❓'
+                    this.#getElement('feedback').innerText = ''
                 }
 
                 async newTestCase() {
@@ -332,6 +337,7 @@
                 async test(source) {
                     this.#getElement('run').disabled = true
                     this.#getElement('newTest').disabled = true
+                    this.#getElement('autoTester').disabled = true
 
                     this.#clearFields()
 
@@ -384,7 +390,6 @@
                 }
 
                 runButtonClick() {
-                    this.#getElement('feedback').innerText = ''
                     this.test(this.#getElement('source').value)
                 }
             }
