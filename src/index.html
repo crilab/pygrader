@@ -32,12 +32,22 @@
             }
 
             #rightPanel {
-                background-color: black;
+                font-family: sans-serif;
+                font-size: 10px;
+                color: white;
+                background-color: #111111;
                 flex: 1;
+                border-left: 1px solid black;
             }
 
-            #output {
-                color: white;
+            #rightPanel > div,
+            #rightPanel > pre {
+                margin: 0;
+                margin-bottom: 15px;
+                background-color: #222222;
+                padding: 15px;
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
             }
 
         </style>
@@ -71,17 +81,14 @@
                             try {
                                 const globals = self.pyodide.toPy({})
                                 const locals = self.pyodide.toPy({})
-                                const result = self.pyodide.runPython(e.data, {globals, locals})
-                                try {
-                                    const result_json = result === undefined ? 'null' : JSON.stringify(result)
-
-                                    if (result_json === undefined)
-                                        throw Error()
-
-                                    post('exec_complete', result_json)
-                                } catch(error) {
-                                    post('exec_error', 'invalid-type')
-                                }
+                                self.pyodide.globals.set(
+                                    'result',
+                                    self.pyodide.runPython(e.data, {globals, locals})
+                                )
+                                post(
+                                    'exec_complete',
+                                    self.pyodide.runPython('import json; json.dumps(result)')
+                                )
                             } catch(error) {
                                 post('stdout', error.message)
                                 post('exec_error', 'crash')
@@ -208,19 +215,83 @@
                 <textarea id="source"></textarea>
             </div>
             <div id="rightPanel">
-                <button id="run">Run</button>
+                <div id="buttons"><button id="run">Run</button></div>
+                &nbsp;Anrop:
+                <pre id="call"></pre>
+                &nbsp;Returvärde:
+                <pre id="return"></pre>
+                &nbsp;Utskrift:
                 <pre id="output"></pre>
             </div>
         </div>
 
         <script>
+            class Assignment {
+                #funcName
+                #argsGenerator
+                #currentArgs
+                #solution
+
+                constructor(description, funcName, argsGenerator, solution) {
+                    if (window.assignment) return window.assignment
+
+                    document.getElementById('description').innerHTML = description.replace('%NAME%', `<strong>${funcName}</strong>`)
+                    this.#funcName = funcName
+                    this.#argsGenerator = argsGenerator
+                    this.#solution = solution
+                    this.newArgs()
+                    this.#getElement('call').innerText += this.getCall()
+
+                    window.assignment = this
+                }
+
+                #getElement(id) {
+                    return document.getElementById(id)
+                }
+
+                newArgs() {
+                    this.#currentArgs = this.#argsGenerator()
+                }
+
+                getCall() {
+                    let call = this.#funcName + '('
+                    this.#currentArgs.forEach(arg => {
+                        arg = '\n' + JSON.stringify(arg, null, 2)
+                        arg = arg.replaceAll('\n', '\n  ')
+                        call += arg + ','
+                    })
+                    return call.slice(0, -1) + '\n)'
+                }
+
+                async test(source) {
+                    this.#getElement('return').innerText = ''
+                    this.#getElement('output').innerText = ''
+                    source += '\n\n' + this.getCall()
+                    const result = await window.python.run(source)
+                    document.getElementById('return').innerText = JSON.stringify(result)
+                }
+            }
+
+            new Assignment(
+                '<p>Definiera en funktion %NAME% som tar två heltal som argument.</p><p>Funktionen ska returnera summan av de två heltalen.</p>',
+                'double',
+                () => {
+                    const args = []
+                    while (args.length < 2) {
+                        args.push(Math.floor(Math.random() * 2000) - 1000)
+                    }
+                    return args
+                },
+                () => {}
+            )
+
             const sandbox = document.getElementById('sandbox')
             const source = document.getElementById('source')
             const run = document.getElementById('run')
             const output = document.getElementById('output')
 
             run.addEventListener('click', async function() {
-                console.warn(await window.python.run(source.value))
+                window.assignment.test(source.value)
             })
         </script>
     </body>
