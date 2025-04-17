@@ -240,7 +240,11 @@
                 <textarea id="source"></textarea>
             </div>
             <div id="rightPanel">
-                <div id="buttons"><button id="run" disabled>Run</button><span id="feedback"></span></div>
+                <div id="buttons">
+                    <button id="run" disabled>Run</button>
+                    <button id="newTest" disabled>New Test</button>
+                    <span id="feedback"></span>
+                </div>
                 &nbsp;Anrop:
                 <pre id="call"></pre>
                 &nbsp;Facit (JSON):
@@ -280,10 +284,15 @@
 
                     window.python.addStatusEventListener(ready => {
                         const run = this.#getElement('run')
-                        if (ready && !this.#autoTesterRunning)
+                        const newTest = this.#getElement('newTest')
+                        if (ready && !this.#autoTesterRunning) {
                             run.disabled = false
-                        else
+                            newTest.disabled = false
+                        }
+                        else {
                             run.disabled = true
+                            newTest.disabled = true
+                        }
                     })
 
                     window.assignment = this
@@ -321,7 +330,11 @@
                 }
 
                 async test(source) {
+                    this.#getElement('run').disabled = true
+                    this.#getElement('newTest').disabled = true
+
                     this.#clearFields()
+
                     try {
                         var result = await window.python.run(source + '\n\n' + this.#getCall())
                     } catch(error) {
@@ -392,7 +405,6 @@
 
             run.addEventListener('click', async function() {
                 document.getElementById('feedback').innerText = ''
-                run.disabled = true
                 window.assignment.test(source.value)
             })
         </script>
