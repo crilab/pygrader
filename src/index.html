@@ -71,6 +71,7 @@
         <script>
             class PythonRuntime {
                 #execTimeout
+                #execStdoutCounter
                 #execResolve
                 #execReject
                 #exec(type, data, newResolve = undefined) {
@@ -119,13 +120,21 @@
                 }
 
                 #windowMessage(event) {
-                    console.log(event)
-                    switch (event.type) {
-                        case 'ready':
+                    if (['not ready', undefined].includes(this.#execResolve)) {
+                        if (event.type == 'ready')
                             this.#execResolve = undefined
-                            break
+                        return
+                    }
+
+                    console.log(event)
+
+                    switch (event.type) {
                         case 'stdout':
-                            this.#output(event.data)
+                            this.#execStdoutCounter += 1
+                            if (this.#execStdoutCounter <= 100)
+                                this.#output(event.data)
+                            else
+                                this.#sandboxReset('spam')
                             break
                         case 'exec_complete':
                             this.#exec('resolve', JSON.parse(event.data))
@@ -145,6 +154,7 @@
                         this.#execReject = reject
                     })
 
+                    this.#execStdoutCounter = 0
                     this.#getElement('sandbox').contentWindow.postMessage(code, '*')
                     this.#execTimeout = setTimeout(() => { this.#sandboxReset('timeout') }, 1000)
                     return await execPromise
