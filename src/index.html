@@ -14,8 +14,6 @@
                         importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js')
 
                         function post(type, data) {
-                            if (data === undefined)
-                                data = null
                             self.postMessage({type, data})
                         }
 
@@ -34,9 +32,20 @@
                             if (!self.pyodideReady)
                                 return
                             try {
-                                post('exec_complete', self.pyodide.runPython(e.data))
+                                const result = self.pyodide.runPython(e.data)
+                                try {
+                                    const result_json = JSON.stringify(result)
+
+                                    if (result_json === undefined)
+                                        throw Error()
+
+                                    post('exec_complete', result_json)
+                                } catch(error) {
+                                    post('exec_error', 'invalid-type')
+                                }
                             } catch(error) {
-                                post('exec_error', error.message)
+                                post('stdout', error.message)
+                                post('exec_error', 'crash')
                             }
                         }
 
@@ -109,11 +118,10 @@
                             this.#output(event.data)
                             break
                         case 'exec_complete':
-                            this.#exec('resolve', event.data)
+                            this.#exec('resolve', JSON.parse(event.data))
                             break
                         case 'exec_error':
-                            this.#output(event.data)
-                            this.#exec('reject', 'crash')
+                            this.#exec('reject', event.data)
                             break
 
                     }
