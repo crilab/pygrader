@@ -54,6 +54,10 @@
                 margin-left: 10px;
             }
 
+            #output {
+                min-height: 30px;
+            }
+
         </style>
     </head>
     <body>
@@ -289,13 +293,21 @@
                     return document.getElementById(id)
                 }
 
+                #clearFields() {
+                    this.#getElement('call').innerText = this.#getCall()
+                    this.#getElement('solution').innerText = this.#solutionCurrent
+                    this.#getElement('return').innerText = ' ' // Add space to prevent flickering
+                    this.#getElement('output').innerText = ''
+                    this.#getElement('gradeReturn').innerText = '❓'
+                    this.#getElement('gradeOutput').innerText = '❓'
+                }
+
                 async #newTestCase() {
                     this.#argsCurrent = this.#argsGenerator()
-                    this.#getElement('call').innerText += this.#getCall()
                     this.#solutionCurrent = await window.python.run(
                         this.#solution + '\n\n' + this.#getCall()
                     )
-                    this.#getElement('solution').innerText = this.#solutionCurrent
+                    this.#clearFields()
                 }
 
                 #getCall() {
@@ -309,14 +321,9 @@
                 }
 
                 async test(source) {
-                    this.#getElement('return').innerText = ' '
-                    this.#getElement('output').innerText = ''
-                    this.#getElement('gradeReturn').innerText = ''
-                    this.#getElement('gradeOutput').innerText = ''
-
-                    source += '\n\n' + this.#getCall()
+                    this.#clearFields()
                     try {
-                        var result = await window.python.run(source)
+                        var result = await window.python.run(source + '\n\n' + this.#getCall())
                     } catch(error) {
                         const feedback = this.#getElement('feedback')
                         feedback.style.color = 'red'
