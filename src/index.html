@@ -34,7 +34,7 @@
                             try {
                                 const result = self.pyodide.runPython(e.data)
                                 try {
-                                    const result_json = JSON.stringify(result)
+                                    const result_json = result === undefined ? 'null' : JSON.stringify(result)
 
                                     if (result_json === undefined)
                                         throw Error()
