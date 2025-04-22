@@ -231,32 +231,7 @@
                 }
             }
             new PythonRuntime()
-        </script>
 
-        <div id="content">
-            <div id="leftPanel">
-                <div id="description"></div>
-                <textarea id="source"></textarea>
-            </div>
-            <div id="rightPanel">
-                <div id="buttons">
-                    <button id="run" disabled onclick="window.assignment.runButtonClick()">Kör!</button>
-                    <button id="newTest" disabled onclick="window.assignment.newTestCase()">Nytt test...</button>
-                    <button id="autoTester" disabled onclick="window.assignment.autoTesterButtonClick()">Auto Tester</button>
-                    <span id="feedback"></span>
-                </div>
-                &nbsp;Anrop:
-                <pre id="call"></pre>
-                &nbsp;Facit (JSON):
-                <pre id="solution"></pre>
-                &nbsp;Returvärde (JSON): <span id="gradeReturn"></span>
-                <pre id="return"></pre>
-                &nbsp;Utskrift: <span id="gradeOutput"></span>
-                <pre id="output"></pre>
-            </div>
-        </div>
-
-        <script>
             class Assignment {
                 #funcName
                 #argsGenerator
@@ -266,10 +241,9 @@
                 #autoTesterRunning
                 #autoTesterStopping
 
-                constructor(description, funcName, argsGenerator, solution) {
+                constructor(funcName, argsGenerator, solution) {
                     if (window.assignment) return window.assignment
 
-                    document.getElementById('description').innerHTML = description.replace('%NAME%', `<strong>${funcName}</strong>`)
                     this.#funcName = funcName
                     this.#argsGenerator = argsGenerator
                     this.#solution = solution
@@ -431,19 +405,46 @@
                 }
             }
 
-            new Assignment(
-                '<p>Definiera en funktion %NAME% som tar två heltal som argument.</p><p>Funktionen ska returnera summan av de två heltalen.</p>',
-                'double',
-                () => {
-                    const args = []
-                    while (args.length < 2) {
-                        args.push(Math.floor(Math.random() * 2000) - 1000)
-                    }
-                    return args
-                },
-                `def double(a, b):
-                    return a + b`
-            )
         </script>
+
+        <div id="content">
+            <div id="leftPanel">
+                <div id="description">
+                    <p>Definiera en funktion <strong>double</strong> som tar två heltal som argument.</p>
+                    <p>Funktionen ska returnera summan av de två heltalen.</p>
+                    <script>
+                        new Assignment(
+                            'double',
+                            () => {
+                                const args = []
+                                while (args.length < 2) {
+                                    args.push(Math.floor(Math.random() * 2000) - 1000)
+                                }
+                                return args
+                            },
+                            `def double(a, b):
+                                return a + b`
+                            )
+                    </script>
+                </div>
+                <textarea id="source"></textarea>
+            </div>
+            <div id="rightPanel">
+                <div id="buttons">
+                    <button id="run" disabled onclick="window.assignment.runButtonClick()">Kör!</button>
+                    <button id="newTest" disabled onclick="window.assignment.newTestCase()">Nytt test...</button>
+                    <button id="autoTester" disabled onclick="window.assignment.autoTesterButtonClick()">Auto Tester</button>
+                    <span id="feedback"></span>
+                </div>
+                &nbsp;Anrop:
+                <pre id="call"></pre>
+                &nbsp;Facit (JSON):
+                <pre id="solution"></pre>
+                &nbsp;Returvärde (JSON): <span id="gradeReturn"></span>
+                <pre id="return"></pre>
+                &nbsp;Utskrift: <span id="gradeOutput"></span>
+                <pre id="output"></pre>
+            </div>
+        </div>
     </body>
 </html>
